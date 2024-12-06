@@ -95,6 +95,10 @@ class PineConeAPI:
             if results['matches']:
                 data = [match['metadata'] for match in results['matches'] if float(match['score']>=score_threshold)]
                 df = pd.DataFrame(data)
+                if 'Text' in df.columns:
+                    # this command combines Text and text in the best way possible
+                    df['text'] = df['Text'].combine_first(df['text'])
+                    
                 if summarized:
                     df['text'] = df['text'].apply(lambda x: openai.generate_summary(text=x))
                 return df
