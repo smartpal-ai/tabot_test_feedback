@@ -1,11 +1,11 @@
-from template import AutomatedFeedbackTemplate 
+from template_detail import AutomatedFeedbackTemplate 
 from utils import OpenAIChatResponse
 from pprint import pprint
 import pandas as pd
 from datetime import datetime
 
 class QuizFeedbackGenerator():
-    def __init__(self, course_id, readonly: bool = False):
+    def __init__(self, course_id, user_id, readonly: bool = False):
         """
         Initializes the QuizFeedbackGenerator with a database connection and course ID.
         
@@ -14,10 +14,11 @@ class QuizFeedbackGenerator():
         """
         super().__init__()
         self.course_id = course_id
+        self.user_id = user_id
         
         self.openai = OpenAIChatResponse()
         
-        self.file_name = 'data/feedback_generatorfeedback_generator.xlsx'
+        self.file_name = 'data/feedback_generator.xlsx'
         self.load_file()
 
         self.to_update_feedback_quizzes = None
@@ -71,6 +72,7 @@ class QuizFeedbackGenerator():
             & (df['visible_to_everyone'] == 1)
             & (df['feedback'].isnull())
             & (df['course_id'] == self.course_id)
+            & (df['user_id'] == self.user_id)
             & (df['due_date'] < datetime.now())
         )
 
@@ -108,7 +110,7 @@ class QuizFeedbackGenerator():
                 
         return df[condition].to_dict(orient='records')
     
-    def get_past_performance_query(self, user_id: int, quiz_date: datetime, limit:int = 2) -> dict:
+    def get_past_performance_query(self, user_id: int, quiz_date: datetime, limit:int = 3) -> dict:
         """
         :param user_id: The ID of the user.
         :param quiz_date: The date of the current quiz.
@@ -124,12 +126,14 @@ class QuizFeedbackGenerator():
                 & (df['submission_dropped'] == 0)
                 & (df['quiz_dropped'] == 0)
                 & (df['course_id'] == self.course_id)
-                & (df['user_id'] == user_id)
+                & (df['user_id'] == self.user_id)
                 & (df['due_date'] < quiz_date)
                 & (df['feedback'].notna())
             )
         
         filtered_data = df[condition]
+
+        filtered_data = filtered_data.sort_values(by="due_date", ascending = False) ## Past quizzes should be descending in due date
 
         if limit:
             filtered_data = filtered_data[:limit]
@@ -170,7 +174,7 @@ class QuizFeedbackGenerator():
 
         return result
 
-    def get_quiz_to_update(self, limit: int = 2):
+    def get_quiz_to_update(self, limit: int = 1):
         """
         Fetches quizzes that need feedback and stores them in an instance variable.
 
@@ -262,11 +266,12 @@ class QuizFeedbackGenerator():
             """
         
         for question in quiz_details[submission_id]:
+            question_id = question['question_id']
             question_name = question['question_name']
             question_text = question['question_text']
 
             question_template = f""" 
-            {question_name} : {question_text} \
+            {question_id} | {question_name} : {question_text} \
             """
 
             Current_Quiz_Template += question_template
@@ -314,19 +319,22 @@ class QuizFeedbackGenerator():
                 }
             feedback = self.openai.generate_response(query=prompt.format(**input))
 
+            # print(Current_Quiz_Template)
+            # print(Past_Performance_Template)
             print(feedback)
             
             self.update_feedback(submission_id,feedback)
             updated += 1
         
-        return {"updated" : updated}
+        return feedback
 
 
-if __name__ == "__main__":
-    course_id = 395298
-    qfg = QuizFeedbackGenerator(course_id=course_id)
-    qfg.get_quiz_to_update()
-    pprint(qfg.to_update_feedback_quizzes)
+# if __name__ == "__main__":
+#     course_id = 395298
+#     user_id = 1280512
+#     qfg = QuizFeedbackGenerator(course_id=course_id)
+#     qfg.get_quiz_to_update()
+#     pprint(qfg.to_update_feedback_quizzes)
 
-    qfg.generate_feedback()
-    qfg.save_data()
+#     qfg.generate_feedback()
+#     qfg.save_data()
