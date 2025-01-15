@@ -98,43 +98,22 @@ class AutomatedFeedbackTemplate(BaseTemplate):
             {past_performance} \ 
 
             Instructions:
-
-            - Analyze Current Performance:
-
-            Analyze the texts of questions, correct answers, and the student's answers. 
+            
+            Please ensure that the feedback focuses on the specific context of the question text and answer text of the current quiz.
             Compare the chosen answers with the correct answers (weight == 100) and incorrect answers (weight == 0).
-            Calculate the accuracy and identify all the areas where the student made mistakes.
-            For all the questions where the student made mistakes, please show the reasoning and explanations for the correct answer (as detailed as possible).
+            For the questions where the student made mistakes, please show the explanations for the correct answer (as detailed as possible). 
+            Please provide explanations for at most 5 questions where the student made mistakes. 
+            Note that if the student doens't attempt a question (Student's Choice Id : Not Attempted), it is not considered incorrect so it should not be included in the areas for improvement.
 
-            - Compare with Past Performance (if available):
-
-            If past performance data is available, examine the student's past performance details.
-            Compare current quiz results with past results to identify improvement or decline.
-            
-            - Generate Personalized Feedback:
-
-            Provide a summary of the student's performance in the current quiz.
-            Highlight areas of strength and areas needing improvement.
-            If past performance data is available, compare current performance with past performance to show progress or areas of concern.
-            
-            - Suggest Ways to Improve:
-
-            Provide actionable and specific suggestions for the student to improve in future quizzes.
-            Include study tips, resources, and strategies tailored to the student's needs.
-
-            Example Feedback Structure:
-
-            Feedback: [Feedback]
-            Strengths: [List areas where the student performed well]
-            Areas for Improvement: [List all the areas where the student made mistakes and show the reasoning for correct answers]
-            Progress: [Highlight improvements or decline compared to the past quiz]
-            Suggestions for Improvement: [Provide suggestions for the student to improve in future quizzes]
-            
-            Please ensure that the feedback is not too general and focuses on the specific context of the question text and answer text of the current quiz.
-            For all the questions where the student made mistakes, please show the reasoning and explanations for the correct answer (as detailed as possible). 
+            Please generate the feedback in the following json structure:
+            feedback: Overall feedback summary for submission.,
+            strengths: Summarize areas where the student performed well,
+            areas_for_improvement: 
+            [question_id]: Explanation for question 1.,
+            [question_id]: Explanation for question 2.,
+            progress: Highlight improvements or decline compared to the past quiz.,
+            suggestions: Provide suggestions for the student to improve in future quizzes.
             """
-
-            # Ensure that the feedback is positive, constructive, and encouraging. Focus on helping the student understand their mistakes and provide clear guidance on how to improve.
         
         if response_schemas is None:
             response_schemas = {
@@ -147,6 +126,29 @@ class AutomatedFeedbackTemplate(BaseTemplate):
         
         super().__init__(template_text, response_schemas, input_vars)
 
+            # - Analyze Current Performance:
+
+            # Analyze the texts of questions, correct answers, and the student's answers. 
+            # Compare the chosen answers with the correct answers (weight == 100) and incorrect answers (weight == 0).
+            # Calculate the accuracy and identify all the areas where the student made mistakes.
+            # For all the questions where the student made mistakes, please show the reasoning and explanations for the correct answer (as detailed as possible).
+
+            # - Compare with Past Performance (if available):
+
+            # If past performance data is available, examine the student's past performance details.
+            # Compare current quiz results with past results to identify improvement or decline.
+            
+            # - Generate Personalized Feedback:
+
+            # Provide a summary of the student's performance in the current quiz.
+            # Highlight areas of strength and areas needing improvement.
+            # If past performance data is available, compare current performance with past performance to show progress or areas of concern.
+            
+            # - Suggest Ways to Improve:
+
+            # Provide actionable and specific suggestions for the student to improve in future quizzes.
+            # Include study tips, resources, and strategies tailored to the student's needs.
+        
     def build(self) -> Tuple[ChatPromptTemplate, Optional[str], Union[StructuredOutputParser, StrOutputParser]]:
         """
         Build the prompt and output parser for the automated feedback generation.
